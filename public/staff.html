@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Event Staff Portal</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h2 { color: #007bff; margin-top: 0; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .big-text { font-size: 1.2em; font-weight: bold; margin-top: 10px; display: block; }
+    </style>
+</head>
+<body>
+    <h1>👋 Staff Portal</h1>
+    
+    <div class="grid">
+        <div class="card">
+            <h2>1. Issue Band</h2>
+            <p>Ask for Roll Number, then scan a NEW band.</p>
+            <input type="text" id="s_reg" placeholder="Student Roll No">
+            <input type="text" id="s_rfid_link" placeholder="Scan New Band Here">
+            <button onclick="linkCard()">Link Band to Student</button>
+            <span id="link_res" class="big-text"></span>
+        </div>
+
+        <div class="card">
+            <h2>2. Check Status</h2>
+            <p>Scan a band to see name & remaining meals.</p>
+            <input type="text" id="s_rfid_check" placeholder="Scan Band Here">
+            <button onclick="checkStatus()" style="background: #28a745;">Check Details</button>
+            <div id="check_res" style="background: #eee; padding: 10px; margin-top: 15px; border-radius: 4px;">
+                Ready to scan...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = "http://localhost:3000";
+
+        async function linkCard() {
+            const reg = document.getElementById('s_reg').value;
+            const rfid = document.getElementById('s_rfid_link').value;
+            
+            const res = await fetch(`${API}/staff/link_card`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ registration_id: reg, rfid_uid: rfid })
+            });
+            const data = await res.json();
+            document.getElementById('link_res').innerText = data.msg;
+            document.getElementById('link_res').style.color = data.status === 'success' ? 'green' : 'red';
+        }
+
+        async function checkStatus() {
+            const rfid = document.getElementById('s_rfid_check').value;
+            
+            const res = await fetch(`${API}/staff/check_status`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ rfid_uid: rfid })
+            });
+            const data = await res.json();
+            
+            const display = document.getElementById('check_res');
+            if (data.status === 'success') {
+                const s = data.data;
+                display.innerHTML = `
+                    <strong>Name:</strong> ${s.name}<br>
+                    <strong>Dept:</strong> ${s.dept}<br>
+                    <strong>Meals Left:</strong> ${s.meal_credits}<br>
+                    <strong>Checked In:</strong> ${s.is_inside ? "YES" : "NO"}
+                `;
+            } else {
+                display.innerHTML = `<span style="color:red">❌ ${data.msg}</span>`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Command Center</title>
+    <style>
+        body { font-family: sans-serif; background: #1a1a2e; color: #fff; padding: 20px; }
+        .container { display: flex; gap: 20px; }
+        .panel { background: #16213e; padding: 20px; border-radius: 10px; flex: 1; border: 1px solid #0f3460; }
+        h2 { border-bottom: 2px solid #e94560; padding-bottom: 10px; }
+        input, button { width: 100%; padding: 10px; margin: 5px 0; background: #0f3460; border: 1px solid #533483; color: white; }
+        button { background: #e94560; cursor: pointer; font-weight: bold; }
+        button:hover { background: #c72c41; }
+        .success { color: #00ff88; }
+        .error { color: #ff0055; }
+    </style>
+</head>
+<body>
+    <h1>🔒 ADMIN DASHBOARD</h1>
+    
+    <div class="container">
+        <div class="panel">
+            <h2>Add Student</h2>
+            <input type="text" id="a_reg" placeholder="Roll No (e.g., 101)">
+            <input type="text" id="a_name" placeholder="Name">
+            <input type="text" id="a_dept" placeholder="Dept">
+            <input type="number" id="a_year" placeholder="Grad Year">
+            <hr style="border-color: #533483">
+            <input type="text" id="a_phone" placeholder="Phone (Confidential)">
+            <input type="text" id="a_addr" placeholder="Address (Confidential)">
+            <button onclick="addStudent()">Save to Database (Encrypted)</button>
+            <p id="msg_add"></p>
+        </div>
+
+        <div class="panel">
+            <h2>Issue Meal</h2>
+            <p>Scan card to redeem meal credit.</p>
+            <input type="text" id="m_rfid" placeholder="Click here & Scan RFID">
+            <button onclick="issueMeal()">Redeem Meal</button>
+            <p id="msg_meal"></p>
+        </div>
+    </div>
+
+    <script>
+        const API = "http://localhost:3000";
+
+        async function addStudent() {
+            const res = await fetch(`${API}/admin/add_student`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    registration_id: document.getElementById('a_reg').value,
+                    name: document.getElementById('a_name').value,
+                    dept: document.getElementById('a_dept').value,
+                    grad_year: document.getElementById('a_year').value,
+                    phone: document.getElementById('a_phone').value,
+                    address: document.getElementById('a_addr').value
+                })
+            });
+            const data = await res.json();
+            document.getElementById('msg_add').innerText = data.msg;
+            document.getElementById('msg_add').className = data.status === 'success' ? 'success' : 'error';
+        }
+
+        async function issueMeal() {
+            const rfid = document.getElementById('m_rfid').value;
+            const res = await fetch(`${API}/admin/issue_meal`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ rfid_uid: rfid })
+            });
+            const data = await res.json();
+            let text = data.msg;
+            if(data.remaining !== undefined) text += ` (Remaining: ${data.remaining})`;
+            
+            const el = document.getElementById('msg_meal');
+            el.innerText = text;
+            el.className = data.status === 'success' ? 'success' : 'error';
+            document.getElementById('m_rfid').value = ""; // Clear for next scan
+            document.getElementById('m_rfid').focus();
+        }
+    </script>
+</body>
+</html>
