@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Admin - Issue Cards</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+        .card { border: 1px solid #ddd; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        input, button { padding: 10px; width: 100%; margin-top: 10px; box-sizing: border-box; }
+        button { background-color: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #218838; }
+        #status { margin-top: 15px; font-weight: bold; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+
+    <h2>🎓 Event Entrance Desk</h2>
+
+    <div class="card">
+        <h3>1. Add New Student</h3>
+        <input type="text" id="regId" placeholder="Roll Number (e.g., CSE-01)">
+        <input type="text" id="name" placeholder="Student Name">
+        <button onclick="addStudent()">Add to Database</button>
+    </div>
+
+    <br>
+
+    <div class="card">
+        <h3>2. Issue RFID Card</h3>
+        <p>Enter the Roll Number and scan the tag.</p>
+        <input type="text" id="issueRegId" placeholder="Student Roll Number">
+        <input type="text" id="rfidTag" placeholder="Scanned RFID UID (e.g., TAG_555)">
+        <button onclick="issueCard()" style="background-color: #007bff;">Link Card to Student</button>
+    </div>
+
+    <div id="status"></div>
+
+    <script>
+        const API_URL = "http://localhost:3000";
+
+        async function addStudent() {
+            const regId = document.getElementById('regId').value;
+            const name = document.getElementById('name').value;
+
+            const response = await fetch(`${API_URL}/setup/add_student`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    registration_id: regId, 
+                    name: name, 
+                    dept: "General", 
+                    grad_year: 2024 
+                })
+            });
+
+            const data = await response.json();
+            showStatus(data);
+        }
+
+        async function issueCard() {
+            const regId = document.getElementById('issueRegId').value;
+            const rfid = document.getElementById('rfidTag').value;
+
+            const response = await fetch(`${API_URL}/gate/issue_card`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    registration_id: regId, 
+                    rfid_uid: rfid 
+                })
+            });
+
+            const data = await response.json();
+            showStatus(data);
+        }
+
+        function showStatus(data) {
+            const el = document.getElementById('status');
+            if(data.status === 'success') {
+                el.innerHTML = `<span class="success">✅ Success: ${data.msg || "Card Linked!"}</span>`;
+            } else {
+                el.innerHTML = `<span class="error">❌ Error: ${data.msg || data.reason}</span>`;
+            }
+        }
+    </script>
+</body>
+</html>
